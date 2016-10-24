@@ -17,7 +17,9 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 
 import raunysouza.github.com.processor.CodeGeneration;
-import raunysouza.github.com.processor.exception.ProcessorException;
+import raunysouza.github.com.processor.exception.ProcessingException;
+import raunysouza.github.com.processor.method.SharedPreferenceMethodResolver;
+import raunysouza.github.com.processor.method.SharedPreferencesMethod;
 import raunysouza.github.com.processor.model.Preference;
 import raunysouza.github.com.processor.model.SharedPreferenceClass;
 
@@ -28,18 +30,30 @@ public class SharedPreferenceGenerator implements Generator {
 
     private static final String FIELD_PREFERENCE_NAME = "preferences";
 
+    private SharedPreferenceMethodResolver typeMethodResolver;
     private ClassName sharedPreferenceClassName;
     private ClassName contextClassName;
 
     public SharedPreferenceGenerator() {
+        typeMethodResolver = new SharedPreferenceMethodResolver();
         contextClassName = ClassName.get("android.content", "Context");
         sharedPreferenceClassName = ClassName.get("android.content", "SharedPreferences");
     }
 
     @Override
-    public void generate(SharedPreferenceClass clazz, ProcessingEnvironment env) throws ProcessorException {
+    public void generate(SharedPreferenceClass clazz, ProcessingEnvironment env) throws ProcessingException {
         ClassName sourceTypeName = (ClassName) ParameterizedTypeName.get(clazz.getSourceElement().asType());
         String prefClassName = clazz.getName();
+
+        List<PreferenceHolder> preferenceHolders = new ArrayList<>(clazz.getPreferences().size());
+        for (Preference preference : clazz.getPreferences()) {
+            SharedPreferencesMethod method = typeMethodResolver.getMethod(preference.getType().toString());
+            if (method == null) {
+                throw new ProcessingException(String.format("Type %s not supported by SharedPreference", preference.getType().toString()),
+                        clazz.getSourceElement());
+            }
+            preferenceHolders.add(new PreferenceHolder(preference, method));
+        }
 
         ClassName instanceClassName = ClassName.get(sourceTypeName.packageName(), prefClassName);
         TypeSpec.Builder builder = TypeSpec.classBuilder(prefClassName)
@@ -47,10 +61,10 @@ public class SharedPreferenceGenerator implements Generator {
                 .addFields(generatedDefaultFields(instanceClassName))
                 .addFields(generateFields(clazz.getPreferences()))
                 .addMethod(generateGetInstanceMethod(instanceClassName))
-                .addMethods(generateFieldsMethod(clazz.getPreferences(), instanceClassName))
-                .addMethod(generateConstructor(clazz))
+                .addMethods(generateFieldsMethod(preferenceHolders, instanceClassName))
+                .addMethod(generateConstructor(clazz, preferenceHolders))
                 .addMethod(generateClearMethod())
-                .addMethod(generateSaveMethod(clazz.getPreferences()));
+                .addMethod(generateSaveMethod(preferenceHolders));
 
         if (clazz.isInterface()) {
             builder.addSuperinterface(sourceTypeName);
@@ -63,29 +77,33 @@ public class SharedPreferenceGenerator implements Generator {
         try {
             CodeGeneration.writeType(env, sourceTypeName.packageName(), builder.build());
         } catch (IOException e) {
-            throw new ProcessorException("Error trying to write file", clazz.getSourceElement());
+            throw new ProcessingException("Error trying to write file", clazz.getSourceElement());
         }
     }
 
-    private MethodSpec generateConstructor(SharedPreferenceClass clazz) {
+    private MethodSpec generateConstructor(SharedPreferenceClass clazz, List<PreferenceHolder> preferenceHolders) {
         MethodSpec.Builder builder =  MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(
-                        ParameterSpec.builder(contextClassName, "context")
-                                .addAnnotation(
-                                        AnnotationSpec.builder(ClassName.get("android.support.annotation", "NonNull"))
-                                                .build())
-                                .build()
+                .addParameter(ParameterSpec.builder(contextClassName, "context")
+                        .addAnnotation(AnnotationSpec.builder(ClassName.get("android.support.annotation", "NonNull")).build())
+                        .build()
                 )
-                .addStatement("$T.requireNonNull($L, $S)", ClassName.get(Objects.class), "context", "Context must not be null")
-                .addStatement("this.$L = context.getSharedPreferences($S, $T.MODE_PRIVATE)",
-                        FIELD_PREFERENCE_NAME, clazz.getPreferenceName(), contextClassName);
+                .addStatement("$T.requireNonNull($L, $S)", ClassName.get(Objects.class), "context", "Context must not be null");
 
-        for (Preference preference : clazz.getPreferences()) {
+        if (clazz.isUseDefault()) {
+            ClassName preferenceManagerClassName = ClassName.get("android.preference", "PreferenceManager");
+            builder.addStatement("this.$L = $T.getDefaultSharedPreferences($L)",
+                    FIELD_PREFERENCE_NAME, preferenceManagerClassName, "context");
+        } else {
+            builder.addStatement("this.$L = context.getSharedPreferences($S, $T.MODE_PRIVATE)",
+                    FIELD_PREFERENCE_NAME, clazz.getPreferenceName(), contextClassName);
+        }
+
+        for (PreferenceHolder preferenceHolder : preferenceHolders) {
             builder.addStatement("set$L(this.$L.$L($S, $L))",
-                    preference.getName(), FIELD_PREFERENCE_NAME,
-                    "", preference.getKeyName(),
-                    preference.getDefaultValue());
+                    preferenceHolder.preference.getName(), FIELD_PREFERENCE_NAME,
+                    preferenceHolder.method.get(), preferenceHolder.preference.getKeyName(),
+                    preferenceHolder.method.defaultValue());
         }
 
         return builder.build();
@@ -106,24 +124,24 @@ public class SharedPreferenceGenerator implements Generator {
         return specs;
     }
 
-    private List<MethodSpec> generateFieldsMethod(List<Preference> preferences, ClassName thisClass) {
-        List<MethodSpec> specs = new ArrayList<>(preferences.size());
+    private List<MethodSpec> generateFieldsMethod(List<PreferenceHolder> preferenceHolders, ClassName thisClass) {
+        List<MethodSpec> specs = new ArrayList<>(preferenceHolders.size());
 
-        for (Preference preference : preferences) {
-            MethodSpec getter = MethodSpec.methodBuilder(preference.getMethodElement().getSimpleName().toString())
+        for (PreferenceHolder preferenceHolder : preferenceHolders) {
+            MethodSpec getter = MethodSpec.methodBuilder(preferenceHolder.preference.getMethodElement().getSimpleName().toString())
                     .addModifiers(Modifier.PUBLIC)
                     .addAnnotation(Override.class)
-                    .returns(ParameterizedTypeName.get(preference.getType()))
-                    .addStatement("return " + preference.getFieldName())
+                    .returns(ParameterizedTypeName.get(preferenceHolder.preference.getType()))
+                    .addStatement("return " + preferenceHolder.preference.getFieldName())
                     .build();
 
             specs.add(getter);
 
-            MethodSpec setter = MethodSpec.methodBuilder("set" + preference.getName())
+            MethodSpec setter = MethodSpec.methodBuilder("set" + preferenceHolder.preference.getName())
                     .addModifiers(Modifier.PUBLIC)
                     .returns(thisClass)
-                    .addParameter(ParameterizedTypeName.get(preference.getType()), preference.getFieldName())
-                    .addStatement("this.$L = $L", preference.getFieldName(), preference.getFieldName())
+                    .addParameter(ParameterizedTypeName.get(preferenceHolder.preference.getType()), preferenceHolder.preference.getFieldName())
+                    .addStatement("this.$L = $L", preferenceHolder.preference.getFieldName(), preferenceHolder.preference.getFieldName())
                     .addStatement("return this")
                     .build();
 
@@ -159,17 +177,17 @@ public class SharedPreferenceGenerator implements Generator {
                 .build();
     }
 
-    private MethodSpec generateSaveMethod(List<Preference> preferences) {
+    private MethodSpec generateSaveMethod(List<PreferenceHolder> preferenceHolders) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder("save")
                 .addModifiers(Modifier.PUBLIC)
                 .returns(void.class)
                 .addStatement("SharedPreferences.Editor editor = $L.edit()", FIELD_PREFERENCE_NAME);
 
-//        for (Preference preference : preferences) {
-//            builder.addStatement("editor.$L($S, $L)",
-//                    preference.getSharedPreferencesMethod().getPutMethodName(),
-//                    preference.getName(), preference.getName());
-//        }
+        for (PreferenceHolder preferenceHolder : preferenceHolders) {
+            builder.addStatement("editor.$L($S, $L)",
+                    preferenceHolder.method.put(),
+                    preferenceHolder.preference.getKeyName(), preferenceHolder.preference.getFieldName());
+        }
 
         builder.addStatement("editor.apply()");
 
@@ -188,5 +206,15 @@ public class SharedPreferenceGenerator implements Generator {
                 .endControlFlow()
                 .addStatement("return instance")
                 .build();
+    }
+
+    private class PreferenceHolder {
+        Preference preference;
+        SharedPreferencesMethod method;
+
+        public PreferenceHolder(Preference preference, SharedPreferencesMethod method) {
+            this.preference = preference;
+            this.method = method;
+        }
     }
 }

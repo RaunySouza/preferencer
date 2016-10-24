@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Preferencer.iml" filepath="$PROJECT_DIR$/Preferencer.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/preferencer/preferencer.iml" filepath="$PROJECT_DIR$/preferencer/preferencer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/preferencer.iml" filepath="$PROJECT_DIR$/preferencer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/preferencer/preferencer-preferencer.iml" filepath="$PROJECT_DIR$/preferencer/preferencer-preferencer.iml" />
       <module fileurl="file://$PROJECT_DIR$/processor/processor.iml" filepath="$PROJECT_DIR$/processor/processor.iml" />
     </modules>
   </component>

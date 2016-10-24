@@ -2,7 +2,7 @@ package raunysouza.github.com.processor.generator;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
-import raunysouza.github.com.processor.exception.ProcessorException;
+import raunysouza.github.com.processor.exception.ProcessingException;
 import raunysouza.github.com.processor.model.SharedPreferenceClass;
 
 /**
@@ -10,5 +10,5 @@ import raunysouza.github.com.processor.model.SharedPreferenceClass;
  */
 public interface Generator {
 
-    void generate(SharedPreferenceClass clazz, ProcessingEnvironment env) throws ProcessorException;
+    void generate(SharedPreferenceClass clazz, ProcessingEnvironment env) throws ProcessingException;
 }

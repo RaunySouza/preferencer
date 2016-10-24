@@ -5,11 +5,11 @@ import javax.lang.model.element.Element;
 /**
  * @author raunysouza
  */
-public class ProcessorException extends Exception {
+public class ProcessingException extends Exception {
 
     private Element element;
 
-    public ProcessorException(String message, Element element) {
+    public ProcessingException(String message, Element element) {
         super(message);
         this.element = element;
     }

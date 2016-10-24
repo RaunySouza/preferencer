@@ -3,7 +3,9 @@ package com.github.raunysouza.preferencer;
 /**
  * @author raunysouza
  */
-@SharedPreference
+@SharedPreference(
+        useDefault = true
+)
 public interface IUser {
 
     int getAge();

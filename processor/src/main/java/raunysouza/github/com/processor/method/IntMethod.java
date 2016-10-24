@@ -6,27 +6,18 @@ package raunysouza.github.com.processor.method;
 public class IntMethod implements SharedPreferencesMethod {
 
     @Override
-    public boolean accept(String referencedType) {
-        return "int".equals(referencedType) || "java.lang.Integer".equals(referencedType);
-    }
-
-    @Override
-    public String getGetterMethodName() {
+    public String get() {
         return "getInt";
     }
 
     @Override
-    public String getPutMethodName() {
+    public String put() {
         return "putInt";
     }
 
     @Override
-    public Object getDefaultValue() {
-        return 0;
+    public String defaultValue() {
+        return "0";
     }
 
-    @Override
-    public Object getDefaultValue(String value) {
-        return Integer.parseInt(value);
-    }
 }

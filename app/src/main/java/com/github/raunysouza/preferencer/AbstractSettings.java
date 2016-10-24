@@ -20,7 +20,7 @@ public abstract class AbstractSettings {
     public abstract Float getA();
 
     @Preference
-    public abstract boolean getBoo();
+    public abstract boolean isBoo();
 
     public abstract long getLon();
 

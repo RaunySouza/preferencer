@@ -20,7 +20,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
-import raunysouza.github.com.processor.exception.ProcessorException;
+import raunysouza.github.com.processor.exception.ProcessingException;
 import raunysouza.github.com.processor.generator.Generator;
 import raunysouza.github.com.processor.generator.SharedPreferenceGenerator;
 import raunysouza.github.com.processor.model.Preference;
@@ -72,7 +72,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                 // No errors, generate
                 generator.generate(sharedPreferenceClass, processingEnv);
             }
-        } catch (ProcessorException e) {
+        } catch (ProcessingException e) {
             error(e.getElement(), e.getMessage());
         }
 
@@ -96,7 +96,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
         return true;
     }
 
-    private void getAllPreferences(TypeElement typeElement, SharedPreferenceClass sharedPreferenceClass) throws ProcessorException {
+    private void getAllPreferences(TypeElement typeElement, SharedPreferenceClass sharedPreferenceClass) throws ProcessingException {
         for (Element element : typeElement.getEnclosedElements()) {
             if (element.getKind() == ElementKind.METHOD &&
                     element.getModifiers().containsAll(Arrays.asList(Modifier.ABSTRACT, Modifier.PUBLIC))) {
