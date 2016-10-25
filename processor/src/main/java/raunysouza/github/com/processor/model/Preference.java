@@ -1,7 +1,5 @@
 package raunysouza.github.com.processor.model;
 
-import com.google.common.base.CaseFormat;
-
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.TypeMirror;
 
@@ -45,13 +43,5 @@ public class Preference {
 
     public void setDefaultValue(String defaultValue) {
         this.defaultValue = defaultValue;
-    }
-
-    public String getKeyName() {
-        return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name);
-    }
-
-    public String getFieldName() {
-        return CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, name);
     }
 }

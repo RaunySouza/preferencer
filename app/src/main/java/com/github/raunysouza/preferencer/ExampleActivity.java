@@ -1,0 +1,18 @@
+package com.github.raunysouza.preferencer;
+
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
+
+/**
+ * @author rauny.souza
+ */
+public class ExampleActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Settings settings = Settings.getInstance(this);
+        settings.getName();
+    }
+}

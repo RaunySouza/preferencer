@@ -13,6 +13,4 @@ import java.lang.annotation.Target;
 public @interface SharedPreference {
 
     boolean useDefault() default false;
-
-    boolean useCache() default false;
 }

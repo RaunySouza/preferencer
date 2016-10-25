@@ -3,7 +3,8 @@ package raunysouza.github.com.processor;
 import com.github.raunysouza.preferencer.SharedPreference;
 import com.google.auto.service.AutoService;
 
-import java.util.Arrays;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -69,6 +70,11 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                 SharedPreference annotation = typeElement.getAnnotation(SharedPreference.class);
                 sharedPreferenceClass.setUseDefault(annotation.useDefault());
                 getAllPreferences(typeElement, sharedPreferenceClass);
+
+                if (sharedPreferenceClass.getPreferences().isEmpty()) {
+                    warn(element, "Class %s is annotated with @SharedPreference but has no field", typeElement.getSimpleName());
+                }
+
                 // No errors, generate
                 generator.generate(sharedPreferenceClass, processingEnv);
             }
@@ -98,8 +104,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
 
     private void getAllPreferences(TypeElement typeElement, SharedPreferenceClass sharedPreferenceClass) throws ProcessingException {
         for (Element element : typeElement.getEnclosedElements()) {
-            if (element.getKind() == ElementKind.METHOD &&
-                    element.getModifiers().containsAll(Arrays.asList(Modifier.ABSTRACT, Modifier.PUBLIC))) {
+            if (element.getKind() == ElementKind.METHOD && element.getModifiers().contains(Modifier.ABSTRACT)) {
 
                 ExecutableElement executableElement = (ExecutableElement) element;
                 String name = executableElement.getSimpleName().toString();
@@ -113,6 +118,10 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                     com.github.raunysouza.preferencer.Preference annotation = executableElement.getAnnotation(com.github.raunysouza.preferencer.Preference.class);
                     if (annotation != null) {
                         preference.setDefaultValue(annotation.defaultValue());
+
+                        if (StringUtils.isEmpty(annotation.name())) {
+                            preference.setName(annotation.name());
+                        }
                     }
 
                     preference.setType(executableElement.getReturnType());
@@ -126,6 +135,14 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
     private void error(Element element, String message, Object... args) {
         messager.printMessage(
                 Diagnostic.Kind.ERROR,
+                String.format(message, args),
+                element
+        );
+    }
+
+    private void warn(Element element, String message, Object... args) {
+        messager.printMessage(
+                Diagnostic.Kind.WARNING,
                 String.format(message, args),
                 element
         );

@@ -1,6 +1,6 @@
 package com.github.raunysouza.preferencer;
 
-import java.util.Set;
+import android.text.TextUtils;
 
 /**
  * @author raunysouza
@@ -8,22 +8,15 @@ import java.util.Set;
 @SharedPreference
 public abstract class AbstractSettings {
 
-    public void test() {
-        String name = getName();
+    @Preference(name = "")
+    protected abstract String getInternalName();
+
+    public String getName() {
+        String name = getInternalName();
+        if (TextUtils.isEmpty(name)) {
+            //Do something useful here
+        }
+        return name;
     }
-
-    @Preference
-    public abstract String getName();
-
-    public abstract int getAge();
-
-    public abstract Float getA();
-
-    @Preference
-    public abstract boolean isBoo();
-
-    public abstract long getLon();
-
-    public abstract Set<String> getSet();
 
 }
