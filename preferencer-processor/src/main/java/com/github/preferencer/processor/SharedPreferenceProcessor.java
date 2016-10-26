@@ -11,6 +11,7 @@ import com.google.auto.service.AutoService;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -25,7 +26,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-
 
 /**
  * @author raunysouza
@@ -69,6 +69,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                 sharedPreferenceClass.setInterface(typeElement.getKind() == ElementKind.INTERFACE);
                 SharedPreference annotation = typeElement.getAnnotation(SharedPreference.class);
                 sharedPreferenceClass.setUseDefault(annotation.useDefault());
+                sharedPreferenceClass.setAllowTransaction(annotation.allowTransaction());
                 getAllPreferences(typeElement, sharedPreferenceClass);
 
                 if (sharedPreferenceClass.getPreferences().isEmpty()) {
@@ -109,13 +110,23 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
             if (element.getKind() == ElementKind.METHOD && element.getModifiers().contains(Modifier.ABSTRACT)) {
 
                 ExecutableElement executableElement = (ExecutableElement) element;
-                String name = executableElement.getSimpleName().toString();
-                if (name.startsWith("get") || name.startsWith("is")) {
+                String methodName = executableElement.getSimpleName().toString();
+                if (methodName.startsWith("get") || methodName.startsWith("is")) {
                     Preference preference = new Preference();
                     preference.setMethodElement(executableElement);
 
-                    name = name.replaceAll("(get|is)", "");
-                    preference.setName(name);
+                    preference.setName(methodName.replaceAll("(get|is)", ""));
+
+                    Optional<? extends Element> setter = typeElement.getEnclosedElements().stream()
+                            .filter(e -> e.getSimpleName().toString().equals("set" + preference.getName()) &&
+                                            e.getKind() == ElementKind.METHOD)
+                            .findFirst();
+
+                    boolean shouldGenerateSetter = true;
+                    if (setter.isPresent()) {
+                        shouldGenerateSetter = setter.get().getModifiers().contains(Modifier.ABSTRACT);
+                    }
+                    preference.setShouldGenerateSetter(shouldGenerateSetter);
 
                     com.github.preferencer.Preference annotation = executableElement.getAnnotation(com.github.preferencer.Preference.class);
                     if (annotation != null) {

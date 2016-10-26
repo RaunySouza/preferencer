@@ -12,6 +12,7 @@ public class Preference {
     private TypeMirror type;
     private String name;
     private String defaultValue;
+    private boolean shouldGenerateSetter;
 
     public ExecutableElement getMethodElement() {
         return methodElement;
@@ -43,5 +44,13 @@ public class Preference {
 
     public void setDefaultValue(String defaultValue) {
         this.defaultValue = defaultValue;
+    }
+
+    public boolean isShouldGenerateSetter() {
+        return shouldGenerateSetter;
+    }
+
+    public void setShouldGenerateSetter(boolean shouldGenerateSetter) {
+        this.shouldGenerateSetter = shouldGenerateSetter;
     }
 }

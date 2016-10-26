@@ -127,23 +127,24 @@ public class SharedPreferenceGenerator implements Generator {
 
             specs.add(getter);
 
-            MethodSpec setter = MethodSpec.methodBuilder("set" + NamingUtils.getMethodName(preferenceHolder.preference.getName()))
-                    .addModifiers(Modifier.PUBLIC)
-                    .returns(thisClass)
-                    .addParameter(ParameterizedTypeName.get(preferenceHolder.preference.getType()),
-                            NamingUtils.getVariableName(preferenceHolder.preference.getName()))
-                    .addStatement("$T.Editor editor = $L != null ? $L.editor : $L.edit()", sharedPreferenceClassName,
-                            FIELD_CURRENT_TRANSACTION, FIELD_CURRENT_TRANSACTION, FIELD_PREFERENCE_NAME)
-                    .addStatement("editor.$L($S, $L)", preferenceHolder.method.put(),
-                            NamingUtils.getKeyName(preferenceHolder.preference.getName()),
-                            NamingUtils.getVariableName(preferenceHolder.preference.getName()))
-                    .beginControlFlow("if ($L == null)", FIELD_CURRENT_TRANSACTION)
+            if (preferenceHolder.preference.isShouldGenerateSetter()) {
+                MethodSpec setter = MethodSpec.methodBuilder("set" + NamingUtils.getMethodName(preferenceHolder.preference.getName()))
+                        .addModifiers(Modifier.PUBLIC)
+                        .returns(void.class)
+                        .addParameter(ParameterizedTypeName.get(preferenceHolder.preference.getType()),
+                                NamingUtils.getVariableName(preferenceHolder.preference.getName()))
+                        .addStatement("$T.Editor editor = $L != null ? $L.editor : $L.edit()", sharedPreferenceClassName,
+                                FIELD_CURRENT_TRANSACTION, FIELD_CURRENT_TRANSACTION, FIELD_PREFERENCE_NAME)
+                        .addStatement("editor.$L($S, $L)", preferenceHolder.method.put(),
+                                NamingUtils.getKeyName(preferenceHolder.preference.getName()),
+                                NamingUtils.getVariableName(preferenceHolder.preference.getName()))
+                        .beginControlFlow("if ($L == null)", FIELD_CURRENT_TRANSACTION)
                         .addStatement("editor.apply()")
-                    .endControlFlow()
-                    .addStatement("return this")
-                    .build();
+                        .endControlFlow()
+                        .build();
 
-            specs.add(setter);
+                specs.add(setter);
+            }
         }
 
         return specs;

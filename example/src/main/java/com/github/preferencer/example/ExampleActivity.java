@@ -13,6 +13,5 @@ public class ExampleActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Settings settings = Settings.getInstance(this);
-        settings.getName();
     }
 }

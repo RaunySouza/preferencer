@@ -13,4 +13,6 @@ import java.lang.annotation.Target;
 public @interface SharedPreference {
 
     boolean useDefault() default false;
+
+    boolean allowTransaction() default false;
 }

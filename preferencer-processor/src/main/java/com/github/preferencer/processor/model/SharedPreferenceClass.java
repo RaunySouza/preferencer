@@ -14,6 +14,7 @@ public class SharedPreferenceClass {
 
     private boolean useDefault;
     private boolean isInterface;
+    private boolean allowTransaction;
     private TypeElement sourceElement;
     private List<Preference> preferences = new ArrayList<>();
 
@@ -52,6 +53,14 @@ public class SharedPreferenceClass {
 
     public void setInterface(boolean anInterface) {
         isInterface = anInterface;
+    }
+
+    public boolean isAllowTransaction() {
+        return allowTransaction;
+    }
+
+    public void setAllowTransaction(boolean allowTransaction) {
+        this.allowTransaction = allowTransaction;
     }
 
     public TypeElement getSourceElement() {

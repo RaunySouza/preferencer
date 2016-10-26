@@ -1,7 +1,5 @@
 package com.github.preferencer.example;
 
-import android.text.TextUtils;
-
 import com.github.preferencer.Preference;
 import com.github.preferencer.SharedPreference;
 
@@ -11,15 +9,8 @@ import com.github.preferencer.SharedPreference;
 @SharedPreference
 public abstract class AbstractSettings {
 
-    @Preference(name = "")
-    protected abstract String getInternalName();
+    @Preference
+    protected abstract String getName();
 
-    public String getName() {
-        String name = getInternalName();
-        if (TextUtils.isEmpty(name)) {
-            //Do something useful here
-        }
-        return name;
-    }
 
 }
