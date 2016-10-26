@@ -1,6 +1,8 @@
 # Preferencer
 Processor to simplify Android Shared Preferences
 
+[![](https://jitpack.io/v/RaunySouza/preferencer.svg)](https://jitpack.io/#RaunySouza/preferencer)
+
 # Including in your project
 
 We need to include the [apt plugin](https://bitbucket.org/hvisser/android-apt) in our classpath to enable Annotation Processing:
