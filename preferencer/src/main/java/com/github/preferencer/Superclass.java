@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 /**
  * @author rauny.souza
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Target(ElementType.TYPE)
 public @interface Superclass {
 }
