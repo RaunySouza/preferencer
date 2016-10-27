@@ -1,13 +1,11 @@
 package com.github.preferencer.example;
 
-import com.github.preferencer.SharedPreference;
+import com.github.preferencer.Superclass;
 
 /**
  * @author raunysouza
  */
-@SharedPreference(
-        useDefault = true
-)
+@Superclass
 public interface IUser {
 
     int getAge();

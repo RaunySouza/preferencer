@@ -2,6 +2,7 @@ package com.github.preferencer.processor;
 
 import com.github.preferencer.PostConstruct;
 import com.github.preferencer.SharedPreference;
+import com.github.preferencer.Superclass;
 import com.github.preferencer.processor.exception.ProcessingException;
 import com.github.preferencer.processor.generator.Generator;
 import com.github.preferencer.processor.generator.SharedPreferenceGenerator;
@@ -27,6 +28,8 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
 /**
@@ -35,6 +38,7 @@ import javax.tools.Diagnostic;
 @AutoService(Processor.class)
 public class SharedPreferenceProcessor extends AbstractProcessor {
 
+    private Types typesUtil;
     private Messager messager;
     private Generator generator;
 
@@ -43,6 +47,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
         super.init(processingEnv);
         messager = processingEnv.getMessager();
         generator = new SharedPreferenceGenerator();
+        typesUtil = processingEnv.getTypeUtils();
     }
 
     @Override
@@ -146,6 +151,18 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
 
                     sharedPreferenceClass.addPreference(preference);
                 }
+            }
+        }
+
+        TypeElement superclass = (TypeElement) typesUtil.asElement(typeElement.getSuperclass());
+        if (superclass != null && superclass.getAnnotation(Superclass.class) != null) {
+            getAllPreferences(superclass, sharedPreferenceClass);
+        }
+
+        for (TypeMirror typeMirror : typeElement.getInterfaces()) {
+            TypeElement interfacee = (TypeElement) typesUtil.asElement(typeMirror);
+            if (interfacee.getAnnotation(Superclass.class) != null) {
+                getAllPreferences(interfacee, sharedPreferenceClass);
             }
         }
     }

@@ -1,19 +1,12 @@
 package com.github.preferencer.example;
 
-import com.github.preferencer.PostConstruct;
-import com.github.preferencer.SharedPreference;
+import com.github.preferencer.Superclass;
 
 /**
  * @author raunysouza
  */
-@SharedPreference
-public abstract class AbstractSettings {
+@Superclass
+public abstract class AbstractSettings implements IUser {
 
     protected abstract String getName();
-
-    @PostConstruct
-    protected void init() {
-
-    }
-
 }
