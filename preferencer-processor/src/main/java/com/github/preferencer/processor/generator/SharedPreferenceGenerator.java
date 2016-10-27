@@ -66,7 +66,7 @@ public class SharedPreferenceGenerator implements Generator {
 
         ClassName instanceClassName = ClassName.get(sourceTypeName.packageName(), prefClassName);
         TypeSpec.Builder builder = TypeSpec.classBuilder(prefClassName)
-                .addModifiers(Modifier.FINAL, Modifier.PUBLIC)
+                .addModifiers(Modifier.PUBLIC)
                 .addFields(generatedDefaultFields(instanceClassName))
                 .addMethod(generateGetInstanceMethod(instanceClassName))
                 .addMethods(generatePreferencesMethod(preferenceHolders))
