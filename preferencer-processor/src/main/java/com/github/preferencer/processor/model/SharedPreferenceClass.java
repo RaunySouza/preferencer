@@ -4,6 +4,7 @@ import com.google.common.base.CaseFormat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.lang.model.element.TypeElement;
 
@@ -17,7 +18,7 @@ public class SharedPreferenceClass {
     private boolean allowTransaction;
     private TypeElement sourceElement;
     private List<Preference> preferences = new ArrayList<>();
-    private String postConstructMethod;
+    private Optional<PostConstructMethod> postConstructMethod = Optional.empty();
 
     public String getName() {
         String className = sourceElement.getSimpleName().toString();
@@ -84,11 +85,11 @@ public class SharedPreferenceClass {
         this.preferences.add(preference);
     }
 
-    public String getPostConstructMethod() {
+    public Optional<PostConstructMethod> getPostConstructMethod() {
         return postConstructMethod;
     }
 
-    public void setPostConstructMethod(String postConstructMethod) {
-        this.postConstructMethod = postConstructMethod;
+    public void setPostConstructMethod(PostConstructMethod postConstructMethod) {
+        this.postConstructMethod = Optional.ofNullable(postConstructMethod);
     }
 }

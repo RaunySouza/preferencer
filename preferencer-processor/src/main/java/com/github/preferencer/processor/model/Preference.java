@@ -74,7 +74,7 @@ public class Preference {
         return setterMethodElement;
     }
 
-    public void setSetterMethodElement(Optional<ExecutableElement> setterMethodElement) {
-        this.setterMethodElement = setterMethodElement;
+    public void setSetterMethodElement(ExecutableElement setterMethodElement) {
+        this.setterMethodElement = Optional.ofNullable(setterMethodElement);
     }
 }

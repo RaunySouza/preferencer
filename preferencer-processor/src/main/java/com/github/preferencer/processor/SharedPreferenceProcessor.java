@@ -6,6 +6,7 @@ import com.github.preferencer.Superclass;
 import com.github.preferencer.processor.exception.ProcessingException;
 import com.github.preferencer.processor.generator.Generator;
 import com.github.preferencer.processor.generator.SharedPreferenceGenerator;
+import com.github.preferencer.processor.model.PostConstructMethod;
 import com.github.preferencer.processor.model.Preference;
 import com.github.preferencer.processor.model.SharedPreferenceClass;
 import com.google.auto.service.AutoService;
@@ -27,6 +28,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -133,7 +135,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                     boolean shouldGenerateSetter = true;
                     if (setter.isPresent()) {
                         shouldGenerateSetter = setter.get().getModifiers().contains(Modifier.ABSTRACT);
-                        preference.setSetterMethodElement(Optional.of((ExecutableElement) setter.get()));
+                        preference.setSetterMethodElement((ExecutableElement) setter.get());
                     }
 
                     preference.setShouldGenerateSetter(shouldGenerateSetter);
@@ -167,33 +169,43 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
         }
     }
 
-    private String getPostConstruct(TypeElement typeElement) throws ProcessingException {
+    private PostConstructMethod getPostConstruct(TypeElement typeElement) throws ProcessingException {
         Optional<? extends Element> postConstructMethodOptional =  typeElement.getEnclosedElements().stream()
                 .filter(element -> element.getAnnotation(PostConstruct.class) != null)
                 .findFirst();
 
         if (postConstructMethodOptional.isPresent()) {
             ExecutableElement element = (ExecutableElement) postConstructMethodOptional.get();
+            boolean injectContext = false;
             if (!element.getParameters().isEmpty()) {
-                throw new ProcessingException("PostConstruct method shouldn't have any parameter", element);
+                if (element.getParameters().size() > 1) {
+                    throw new ProcessingException("@PostConstruct method cannot have more than one parameter", element);
+                }
+
+                VariableElement variableElement = element.getParameters().get(0);
+                TypeElement parameterTypeElement = (TypeElement) typesUtil.asElement(variableElement.asType());
+                if (!parameterTypeElement.getQualifiedName().toString().equals("android.content.Context")) {
+                    throw new ProcessingException("Only android.content.Context could be injected in @PostConstruct method", element);
+                }
+                injectContext = true;
             }
 
             if (element.getModifiers().contains(Modifier.ABSTRACT)) {
-                throw new ProcessingException("PostConstruct method shouldn't be abstract", element);
+                throw new ProcessingException("@PostConstruct method shouldn't be abstract", element);
             }
 
             if (element.getModifiers().contains(Modifier.PRIVATE)) {
-                throw new ProcessingException("PostConstruct method shouldn't be private", element);
+                throw new ProcessingException("@PostConstruct method shouldn't be private", element);
             }
 
             if (element.getReturnType().getKind() != TypeKind.VOID) {
                 warn(element, "PostConstruct doesn't return void, return ignored");
             }
 
-            return element.getSimpleName().toString();
+            return new PostConstructMethod(element.getSimpleName().toString(), injectContext);
         }
 
-        return "";
+        return null;
     }
 
     private void error(Element element, String message, Object... args) {

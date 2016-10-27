@@ -108,9 +108,13 @@ public class SharedPreferenceGenerator implements Generator {
                     FIELD_PREFERENCE_NAME, VAR_CONTEXT, clazz.getPreferenceName(), contextClassName);
         }
 
-        if (!StringUtils.isEmpty(clazz.getPostConstructMethod())) {
-            builder.addStatement("$L()", clazz.getPostConstructMethod());
-        }
+        clazz.getPostConstructMethod().ifPresent(postConstructMethod -> {
+            if (postConstructMethod.isInjectContext()) {
+                builder.addStatement("$L($L)", postConstructMethod.getName(), VAR_CONTEXT);
+            } else {
+                builder.addStatement("$L()", postConstructMethod.getName());
+            }
+        });
 
         return builder.build();
     }
