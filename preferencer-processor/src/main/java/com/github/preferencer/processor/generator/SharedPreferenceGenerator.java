@@ -67,9 +67,10 @@ public class SharedPreferenceGenerator implements Generator {
                 .addModifiers(Modifier.FINAL, Modifier.PUBLIC)
                 .addFields(generatedDefaultFields(instanceClassName))
                 .addMethod(generateGetInstanceMethod(instanceClassName))
-                .addMethods(generateFieldsMethod(preferenceHolders, instanceClassName))
+                .addMethods(generatePreferencesMethod(preferenceHolders))
                 .addMethod(generateConstructor(clazz))
                 .addMethod(generateClearMethod())
+                .addMethod(generateBeginTransactionMethod())
                 .addTypes(generateInnerClasses());
 
         if (clazz.isInterface()) {
@@ -105,10 +106,14 @@ public class SharedPreferenceGenerator implements Generator {
                     FIELD_PREFERENCE_NAME, VAR_CONTEXT, clazz.getPreferenceName(), contextClassName);
         }
 
+        if (!StringUtils.isEmpty(clazz.getPostConstructMethod())) {
+            builder.addStatement("$L()", clazz.getPostConstructMethod());
+        }
+
         return builder.build();
     }
 
-    private List<MethodSpec> generateFieldsMethod(List<PreferenceHolder> preferenceHolders, ClassName thisClass) {
+    private List<MethodSpec> generatePreferencesMethod(List<PreferenceHolder> preferenceHolders) {
         List<MethodSpec> specs = new ArrayList<>(preferenceHolders.size());
 
         for (PreferenceHolder preferenceHolder : preferenceHolders) {
@@ -148,6 +153,15 @@ public class SharedPreferenceGenerator implements Generator {
         }
 
         return specs;
+    }
+
+    private MethodSpec generateBeginTransactionMethod() {
+        ClassName transaction = ClassName.get("", "Transaction");
+        return MethodSpec.methodBuilder("beginTransaction")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(transaction)
+                .addStatement("return new $T()", transaction)
+                .build();
     }
 
     private List<FieldSpec> generatedDefaultFields(ClassName thisInstance) {
@@ -199,7 +213,7 @@ public class SharedPreferenceGenerator implements Generator {
         List<TypeSpec> specs = new ArrayList<>();
 
         TypeSpec transaction = TypeSpec.classBuilder("Transaction")
-                .addModifiers(Modifier.PUBLIC)
+                .addModifiers(Modifier.PRIVATE)
                 .addField(FieldSpec.builder(ClassName.get("android.content.SharedPreferences", "Editor"), "editor", Modifier.PRIVATE).build())
                 .addMethod(MethodSpec.constructorBuilder()
                         .addModifiers(Modifier.PRIVATE)

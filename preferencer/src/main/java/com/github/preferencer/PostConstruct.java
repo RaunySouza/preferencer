@@ -6,11 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @author raunysouza
+ * @author rauny.souza
  */
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)
-public @interface Preference {
-    String name() default "";
-    String defaultValue() default "";
+public @interface PostConstruct {
 }

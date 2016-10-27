@@ -17,6 +17,7 @@ public class SharedPreferenceClass {
     private boolean allowTransaction;
     private TypeElement sourceElement;
     private List<Preference> preferences = new ArrayList<>();
+    private String postConstructMethod;
 
     public String getName() {
         String className = sourceElement.getSimpleName().toString();
@@ -81,5 +82,13 @@ public class SharedPreferenceClass {
 
     public void addPreference(Preference preference) {
         this.preferences.add(preference);
+    }
+
+    public String getPostConstructMethod() {
+        return postConstructMethod;
+    }
+
+    public void setPostConstructMethod(String postConstructMethod) {
+        this.postConstructMethod = postConstructMethod;
     }
 }

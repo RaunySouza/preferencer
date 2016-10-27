@@ -1,6 +1,6 @@
 package com.github.preferencer.example;
 
-import com.github.preferencer.Preference;
+import com.github.preferencer.PostConstruct;
 import com.github.preferencer.SharedPreference;
 
 /**
@@ -9,8 +9,11 @@ import com.github.preferencer.SharedPreference;
 @SharedPreference
 public abstract class AbstractSettings {
 
-    @Preference
     protected abstract String getName();
 
+    @PostConstruct
+    protected void init() {
+
+    }
 
 }

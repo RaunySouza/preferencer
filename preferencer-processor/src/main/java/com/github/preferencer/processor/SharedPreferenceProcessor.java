@@ -1,5 +1,6 @@
 package com.github.preferencer.processor;
 
+import com.github.preferencer.PostConstruct;
 import com.github.preferencer.SharedPreference;
 import com.github.preferencer.processor.exception.ProcessingException;
 import com.github.preferencer.processor.generator.Generator;
@@ -25,6 +26,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic;
 
 /**
@@ -70,6 +72,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                 SharedPreference annotation = typeElement.getAnnotation(SharedPreference.class);
                 sharedPreferenceClass.setUseDefault(annotation.useDefault());
                 sharedPreferenceClass.setAllowTransaction(annotation.allowTransaction());
+                sharedPreferenceClass.setPostConstructMethod(getPostConstruct(typeElement));
                 getAllPreferences(typeElement, sharedPreferenceClass);
 
                 if (sharedPreferenceClass.getPreferences().isEmpty()) {
@@ -143,6 +146,35 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                 }
             }
         }
+    }
+
+    private String getPostConstruct(TypeElement typeElement) throws ProcessingException {
+        Optional<? extends Element> postConstructMethodOptional =  typeElement.getEnclosedElements().stream()
+                    .filter(element -> element.getAnnotation(PostConstruct.class) != null)
+                .findFirst();
+
+        if (postConstructMethodOptional.isPresent()) {
+            ExecutableElement element = (ExecutableElement) postConstructMethodOptional.get();
+            if (!element.getParameters().isEmpty()) {
+                throw new ProcessingException("PostConstruct method shouldn't have any parameter", element);
+            }
+
+            if (element.getModifiers().contains(Modifier.ABSTRACT)) {
+                throw new ProcessingException("PostConstruct method shouldn't be abstract", element);
+            }
+
+            if (element.getModifiers().contains(Modifier.PRIVATE)) {
+                throw new ProcessingException("PostConstruct method shouldn't be private", element);
+            }
+
+            if (element.getReturnType().getKind() != TypeKind.VOID) {
+                warn(element, "PostConstruct doesn't return void, return ignored");
+            }
+
+            return element.getSimpleName().toString();
+        }
+
+        return "";
     }
 
     private void error(Element element, String message, Object... args) {
