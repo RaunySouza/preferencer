@@ -19,12 +19,14 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 
 
@@ -127,21 +129,34 @@ public class SharedPreferenceGenerator implements Generator {
                     .addAnnotation(Override.class)
                     .returns(ParameterizedTypeName.get(preferenceHolder.preference.getType()))
                     .addStatement("return this.$L.$L($S, $L)", FIELD_PREFERENCE_NAME, preferenceHolder.method.get(),
-                            NamingUtils.getVariableName(preferenceHolder.preference.getName()), defaultValue)
+                            preferenceHolder.preference.getKeyName(), defaultValue)
                     .build();
 
             specs.add(getter);
 
             if (preferenceHolder.preference.isShouldGenerateSetter()) {
-                MethodSpec setter = MethodSpec.methodBuilder("set" + NamingUtils.getMethodName(preferenceHolder.preference.getName()))
-                        .addModifiers(Modifier.PUBLIC)
+                String setterName;
+                Set<Modifier> setterModifiers;
+
+                if (preferenceHolder.preference.getSetterMethodElement().isPresent()) {
+                    ExecutableElement setter = preferenceHolder.preference.getSetterMethodElement().get();
+                    setterName = setter.getSimpleName().toString();
+                    setterModifiers = new HashSet<>(setter.getModifiers());
+                    setterModifiers.remove(Modifier.ABSTRACT);
+                } else {
+                    setterName = "set" + NamingUtils.getMethodName(preferenceHolder.preference.getName());
+                    setterModifiers = Collections.singleton(Modifier.PUBLIC);
+                }
+
+                MethodSpec setter = MethodSpec.methodBuilder(setterName)
+                        .addModifiers(setterModifiers)
                         .returns(void.class)
                         .addParameter(ParameterizedTypeName.get(preferenceHolder.preference.getType()),
                                 NamingUtils.getVariableName(preferenceHolder.preference.getName()))
                         .addStatement("$T.Editor editor = $L != null ? $L.editor : $L.edit()", sharedPreferenceClassName,
                                 FIELD_CURRENT_TRANSACTION, FIELD_CURRENT_TRANSACTION, FIELD_PREFERENCE_NAME)
                         .addStatement("editor.$L($S, $L)", preferenceHolder.method.put(),
-                                NamingUtils.getKeyName(preferenceHolder.preference.getName()),
+                                preferenceHolder.preference.getKeyName(),
                                 NamingUtils.getVariableName(preferenceHolder.preference.getName()))
                         .beginControlFlow("if ($L == null)", FIELD_CURRENT_TRANSACTION)
                         .addStatement("editor.apply()")
@@ -213,7 +228,7 @@ public class SharedPreferenceGenerator implements Generator {
         List<TypeSpec> specs = new ArrayList<>();
 
         TypeSpec transaction = TypeSpec.classBuilder("Transaction")
-                .addModifiers(Modifier.PRIVATE)
+                .addModifiers(Modifier.PUBLIC)
                 .addField(FieldSpec.builder(ClassName.get("android.content.SharedPreferences", "Editor"), "editor", Modifier.PRIVATE).build())
                 .addMethod(MethodSpec.constructorBuilder()
                         .addModifiers(Modifier.PRIVATE)

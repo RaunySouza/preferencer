@@ -118,17 +118,19 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                     Preference preference = new Preference();
                     preference.setMethodElement(executableElement);
 
-                    preference.setName(methodName.replaceAll("(get|is)", ""));
+                    int offset = methodName.startsWith("get") ? 3 : 2;
+                    preference.setName(methodName.substring(offset));
 
                     Optional<? extends Element> setter = typeElement.getEnclosedElements().stream()
-                            .filter(e -> e.getSimpleName().toString().equals("set" + preference.getName()) &&
-                                            e.getKind() == ElementKind.METHOD)
+                            .filter(e -> e.getSimpleName().toString().equals("set" + preference.getName()) && e.getKind() == ElementKind.METHOD)
                             .findFirst();
 
                     boolean shouldGenerateSetter = true;
                     if (setter.isPresent()) {
                         shouldGenerateSetter = setter.get().getModifiers().contains(Modifier.ABSTRACT);
+                        preference.setSetterMethodElement(Optional.of((ExecutableElement) setter.get()));
                     }
+
                     preference.setShouldGenerateSetter(shouldGenerateSetter);
 
                     com.github.preferencer.Preference annotation = executableElement.getAnnotation(com.github.preferencer.Preference.class);
@@ -136,7 +138,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                         preference.setDefaultValue(annotation.defaultValue());
 
                         if (!StringUtils.isEmpty(annotation.name())) {
-                            preference.setName(annotation.name());
+                            preference.setKeyName(annotation.name());
                         }
                     }
 
@@ -150,7 +152,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
 
     private String getPostConstruct(TypeElement typeElement) throws ProcessingException {
         Optional<? extends Element> postConstructMethodOptional =  typeElement.getEnclosedElements().stream()
-                    .filter(element -> element.getAnnotation(PostConstruct.class) != null)
+                .filter(element -> element.getAnnotation(PostConstruct.class) != null)
                 .findFirst();
 
         if (postConstructMethodOptional.isPresent()) {
