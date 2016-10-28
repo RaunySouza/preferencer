@@ -179,7 +179,8 @@ public class SharedPreferenceGenerator implements Generator {
         return MethodSpec.methodBuilder("beginTransaction")
                 .addModifiers(Modifier.PUBLIC)
                 .returns(transaction)
-                .addStatement("return new $T()", transaction)
+                .addStatement("$L = new $T()", FIELD_CURRENT_TRANSACTION, transaction)
+                .addStatement("return $L", FIELD_CURRENT_TRANSACTION)
                 .build();
     }
 
