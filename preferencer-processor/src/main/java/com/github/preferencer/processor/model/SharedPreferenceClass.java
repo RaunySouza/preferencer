@@ -2,9 +2,9 @@ package com.github.preferencer.processor.model;
 
 import com.google.common.base.CaseFormat;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.lang.model.element.TypeElement;
 
@@ -17,8 +17,8 @@ public class SharedPreferenceClass {
     private boolean isInterface;
     private boolean allowTransaction;
     private TypeElement sourceElement;
-    private List<Preference> preferences = new ArrayList<>();
-    private Optional<PostConstructMethod> postConstructMethod = Optional.empty();
+    private Set<Preference> preferences = new HashSet<>();
+    private PostConstructMethod postConstructMethod;
 
     public String getName() {
         String className = sourceElement.getSimpleName().toString();
@@ -73,11 +73,11 @@ public class SharedPreferenceClass {
         this.sourceElement = sourceElement;
     }
 
-    public List<Preference> getPreferences() {
+    public Set<Preference> getPreferences() {
         return preferences;
     }
 
-    public void setPreferences(List<Preference> preferences) {
+    public void setPreferences(Set<Preference> preferences) {
         this.preferences = preferences;
     }
 
@@ -86,10 +86,10 @@ public class SharedPreferenceClass {
     }
 
     public Optional<PostConstructMethod> getPostConstructMethod() {
-        return postConstructMethod;
+        return Optional.ofNullable(postConstructMethod);
     }
 
     public void setPostConstructMethod(PostConstructMethod postConstructMethod) {
-        this.postConstructMethod = Optional.ofNullable(postConstructMethod);
+        this.postConstructMethod = postConstructMethod;
     }
 }

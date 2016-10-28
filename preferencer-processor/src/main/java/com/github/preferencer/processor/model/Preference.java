@@ -20,7 +20,7 @@ public class Preference {
     private String keyName;
     private String defaultValue;
     private boolean shouldGenerateSetter;
-    private Optional<ExecutableElement> setterMethodElement = Optional.empty();
+    private ExecutableElement setterMethodElement;
 
     public ExecutableElement getMethodElement() {
         return methodElement;
@@ -71,10 +71,26 @@ public class Preference {
     }
 
     public Optional<ExecutableElement> getSetterMethodElement() {
-        return setterMethodElement;
+        return Optional.ofNullable(setterMethodElement);
     }
 
     public void setSetterMethodElement(ExecutableElement setterMethodElement) {
-        this.setterMethodElement = Optional.ofNullable(setterMethodElement);
+        this.setterMethodElement = setterMethodElement;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Preference that = (Preference) o;
+
+        return name != null ? name.equals(that.name) : that.name == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        return name != null ? name.hashCode() : 0;
     }
 }
