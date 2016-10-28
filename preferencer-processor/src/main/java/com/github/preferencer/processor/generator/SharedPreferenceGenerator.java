@@ -4,6 +4,7 @@ import com.github.preferencer.processor.CodeGeneration;
 import com.github.preferencer.processor.exception.ProcessingException;
 import com.github.preferencer.processor.method.SharedPreferenceMethodResolver;
 import com.github.preferencer.processor.method.SharedPreferencesMethod;
+import com.github.preferencer.processor.model.GeneratedMethod;
 import com.github.preferencer.processor.model.Preference;
 import com.github.preferencer.processor.model.SharedPreferenceClass;
 import com.github.preferencer.processor.utils.NamingUtils;
@@ -138,12 +139,13 @@ public class SharedPreferenceGenerator implements Generator {
 
             specs.add(getter);
 
-            if (preferenceHolder.preference.isShouldGenerateSetter()) {
+            if (preferenceHolder.preference.getSetter().shouldGenerate()) {
                 String setterName;
                 Set<Modifier> setterModifiers;
+                GeneratedMethod setterGenerated = preferenceHolder.preference.getSetter();
 
-                if (preferenceHolder.preference.getSetterMethodElement().isPresent()) {
-                    ExecutableElement setter = preferenceHolder.preference.getSetterMethodElement().get();
+                if (setterGenerated.getMethodElement().isPresent()) {
+                    ExecutableElement setter = setterGenerated.getMethodElement().get();
                     setterName = setter.getSimpleName().toString();
                     setterModifiers = new HashSet<>(setter.getModifiers());
                     setterModifiers.remove(Modifier.ABSTRACT);
@@ -168,6 +170,35 @@ public class SharedPreferenceGenerator implements Generator {
                         .build();
 
                 specs.add(setter);
+            }
+
+            if (preferenceHolder.preference.getRemover().shouldGenerate()) {
+                String removerName;
+                Set<Modifier> removerModifiers;
+                GeneratedMethod removerGenerated = preferenceHolder.preference.getRemover();
+
+                if (removerGenerated.getMethodElement().isPresent()) {
+                    ExecutableElement remover = removerGenerated.getMethodElement().get();
+                    removerName = remover.getSimpleName().toString();
+                    removerModifiers = new HashSet<>(remover.getModifiers());
+                    removerModifiers.remove(Modifier.ABSTRACT);
+                } else {
+                    removerName = "remove" + NamingUtils.getMethodName(preferenceHolder.preference.getName());
+                    removerModifiers = Collections.singleton(Modifier.PUBLIC);
+                }
+
+                MethodSpec remover = MethodSpec.methodBuilder(removerName)
+                        .addModifiers(removerModifiers)
+                        .returns(void.class)
+                        .addStatement("$T.Editor editor = $L != null ? $L.editor : $L.edit()", sharedPreferenceClassName,
+                                FIELD_CURRENT_TRANSACTION, FIELD_CURRENT_TRANSACTION, FIELD_PREFERENCE_NAME)
+                        .addStatement("editor.remove($S)", preferenceHolder.preference.getKeyName())
+                        .beginControlFlow("if ($L == null)", FIELD_CURRENT_TRANSACTION)
+                        .addStatement("editor.apply()")
+                        .endControlFlow()
+                        .build();
+
+                specs.add(remover);
             }
         }
 

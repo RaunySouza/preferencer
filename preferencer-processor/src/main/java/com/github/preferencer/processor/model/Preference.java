@@ -4,8 +4,6 @@ import com.github.preferencer.processor.utils.NamingUtils;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Optional;
-
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.TypeMirror;
 
@@ -19,8 +17,8 @@ public class Preference {
     private String name;
     private String keyName;
     private String defaultValue;
-    private boolean shouldGenerateSetter;
-    private ExecutableElement setterMethodElement;
+    private GeneratedMethod setter;
+    private GeneratedMethod remover;
 
     public ExecutableElement getMethodElement() {
         return methodElement;
@@ -62,20 +60,20 @@ public class Preference {
         this.defaultValue = defaultValue;
     }
 
-    public boolean isShouldGenerateSetter() {
-        return shouldGenerateSetter;
+    public GeneratedMethod getSetter() {
+        return setter;
     }
 
-    public void setShouldGenerateSetter(boolean shouldGenerateSetter) {
-        this.shouldGenerateSetter = shouldGenerateSetter;
+    public void setSetter(GeneratedMethod setter) {
+        this.setter = setter;
     }
 
-    public Optional<ExecutableElement> getSetterMethodElement() {
-        return Optional.ofNullable(setterMethodElement);
+    public GeneratedMethod getRemover() {
+        return remover;
     }
 
-    public void setSetterMethodElement(ExecutableElement setterMethodElement) {
-        this.setterMethodElement = setterMethodElement;
+    public void setRemover(GeneratedMethod remover) {
+        this.remover = remover;
     }
 
     @Override

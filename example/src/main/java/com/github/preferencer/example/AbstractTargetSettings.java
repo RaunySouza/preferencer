@@ -16,6 +16,8 @@ public abstract class AbstractTargetSettings extends AbstractSettings {
     @Preference(defaultValue = "\"Rauny\"")
     protected abstract String getName();
 
+    protected void removeName() {}
+
     @PostConstruct
     public void init() {}
 }

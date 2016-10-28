@@ -6,6 +6,7 @@ import com.github.preferencer.Superclass;
 import com.github.preferencer.processor.exception.ProcessingException;
 import com.github.preferencer.processor.generator.Generator;
 import com.github.preferencer.processor.generator.SharedPreferenceGenerator;
+import com.github.preferencer.processor.model.GeneratedMethod;
 import com.github.preferencer.processor.model.PostConstructMethod;
 import com.github.preferencer.processor.model.Preference;
 import com.github.preferencer.processor.model.SharedPreferenceClass;
@@ -128,17 +129,9 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                     int offset = methodName.startsWith("get") ? 3 : 2;
                     preference.setName(methodName.substring(offset));
 
-                    Optional<? extends Element> setter = typeElement.getEnclosedElements().stream()
-                            .filter(e -> e.getSimpleName().toString().equals("set" + preference.getName()) && e.getKind() == ElementKind.METHOD)
-                            .findFirst();
+                    preference.setSetter(getGeneratedMethod("set" + preference.getName(), typeElement));
 
-                    boolean shouldGenerateSetter = true;
-                    if (setter.isPresent()) {
-                        shouldGenerateSetter = setter.get().getModifiers().contains(Modifier.ABSTRACT);
-                        preference.setSetterMethodElement((ExecutableElement) setter.get());
-                    }
-
-                    preference.setShouldGenerateSetter(shouldGenerateSetter);
+                    preference.setRemover(getGeneratedMethod("remove" + preference.getName(), typeElement));
 
                     com.github.preferencer.Preference annotation = executableElement.getAnnotation(com.github.preferencer.Preference.class);
                     if (annotation != null) {
@@ -167,6 +160,24 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                 getAllPreferences(interfacee, sharedPreferenceClass);
             }
         }
+    }
+
+    private GeneratedMethod getGeneratedMethod(String name, TypeElement typeElement) {
+        GeneratedMethod method = new GeneratedMethod();
+        Optional<? extends Element> optional = getOptionalExecutableElement(name, typeElement);
+
+        if (optional.isPresent()) {
+            method.setShouldGenerate(optional.get().getModifiers().contains(Modifier.ABSTRACT));
+            method.setMethodElement((ExecutableElement) optional.get());
+        }
+
+        return method;
+    }
+
+    private Optional<? extends Element> getOptionalExecutableElement(String methodName, TypeElement typeElement) {
+        return typeElement.getEnclosedElements().stream()
+                .filter(e -> e.getSimpleName().toString().equals(methodName) && e.getKind() == ElementKind.METHOD)
+                .findFirst();
     }
 
     private PostConstructMethod getPostConstruct(TypeElement typeElement) throws ProcessingException {
