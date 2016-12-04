@@ -1,19 +1,25 @@
 package com.github.preferencer.processor;
 
-import com.github.preferencer.PostConstruct;
-import com.github.preferencer.SharedPreference;
-import com.github.preferencer.Superclass;
+import com.github.preferencer.annotation.DefaultBoolean;
+import com.github.preferencer.annotation.DefaultFloat;
+import com.github.preferencer.annotation.DefaultInt;
+import com.github.preferencer.annotation.DefaultLong;
+import com.github.preferencer.annotation.DefaultString;
+import com.github.preferencer.annotation.DefaultStringSet;
+import com.github.preferencer.annotation.SharedPreference;
 import com.github.preferencer.processor.exception.ProcessingException;
-import com.github.preferencer.processor.generator.Generator;
 import com.github.preferencer.processor.generator.SharedPreferenceGenerator;
-import com.github.preferencer.processor.model.GeneratedMethod;
-import com.github.preferencer.processor.model.PostConstructMethod;
 import com.github.preferencer.processor.model.Preference;
-import com.github.preferencer.processor.model.SharedPreferenceClass;
+import com.github.preferencer.processor.model.SharedPreferenceType;
+import com.github.preferencer.processor.model.preference.FloatPreference;
+import com.github.preferencer.processor.model.preference.LiteralPreference;
+import com.github.preferencer.processor.model.preference.LongPreference;
+import com.github.preferencer.processor.model.preference.StringPreference;
+import com.github.preferencer.processor.model.preference.StringSetPreference;
+import com.github.preferencer.processor.utils.ClassNameUtil;
 import com.google.auto.service.AutoService;
 
-import org.apache.commons.lang3.StringUtils;
-
+import java.lang.annotation.Annotation;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -27,11 +33,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
@@ -43,7 +45,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
 
     private Types typesUtil;
     private Messager messager;
-    private Generator generator;
+    private SharedPreferenceGenerator generator;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -74,21 +76,16 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                     return true;
                 }
 
-                SharedPreferenceClass sharedPreferenceClass = new SharedPreferenceClass();
-                sharedPreferenceClass.setSourceElement(typeElement);
-                sharedPreferenceClass.setInterface(typeElement.getKind() == ElementKind.INTERFACE);
-                SharedPreference annotation = typeElement.getAnnotation(SharedPreference.class);
-                sharedPreferenceClass.setUseDefault(annotation.useDefault());
-                sharedPreferenceClass.setAllowTransaction(annotation.allowTransaction());
-                sharedPreferenceClass.setPostConstructMethod(getPostConstruct(typeElement));
-                getAllPreferences(typeElement, sharedPreferenceClass);
+                SharedPreference sharedPreferenceAnnotation = typeElement.getAnnotation(SharedPreference.class);
+                SharedPreferenceType type = new SharedPreferenceType(typeElement, sharedPreferenceAnnotation.useDefault());
+                getPreferences(type);
 
-                if (sharedPreferenceClass.getPreferences().isEmpty()) {
+                if (type.getPreferences().isEmpty()) {
                     warn(element, "Class %s is annotated with @SharedPreference but has no field", typeElement.getSimpleName());
                 }
 
                 // No errors, generate
-                generator.generate(sharedPreferenceClass, processingEnv);
+                generator.generate(type, processingEnv);
             }
         } catch (ProcessingException e) {
             error(e.getElement(), e.getMessage());
@@ -99,124 +96,71 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
         return true;
     }
 
-    private boolean isValidClass(TypeElement element) {
-        // Check whether its a public class
-        if (!element.getModifiers().contains(Modifier.PUBLIC)) {
-            error(element, "The class %s is not public", element.getQualifiedName().toString());
-            return false;
-        }
-
-        // Check whether its a abstract class
-        if (!element.getModifiers().contains(Modifier.ABSTRACT)) {
-            error(element, "Only Abstract class supported and class %s isn't",
-                    element.getQualifiedName().toString());
-            return false;
-        }
-
-        return true;
-    }
-
-    private void getAllPreferences(TypeElement typeElement, SharedPreferenceClass sharedPreferenceClass) throws ProcessingException {
-        for (Element element : typeElement.getEnclosedElements()) {
-            if (element.getKind() == ElementKind.METHOD && element.getModifiers().contains(Modifier.ABSTRACT)) {
-
+    private void getPreferences(SharedPreferenceType type) throws ProcessingException {
+        for (Element element : type.getSourceElement().getEnclosedElements()) {
+            if (element.getKind() == ElementKind.METHOD) {
                 ExecutableElement executableElement = (ExecutableElement) element;
-                String methodName = executableElement.getSimpleName().toString();
-                if (methodName.startsWith("get") || methodName.startsWith("is")) {
-                    Preference preference = new Preference();
-                    preference.setMethodElement(executableElement);
-
-                    int offset = methodName.startsWith("get") ? 3 : 2;
-                    preference.setName(methodName.substring(offset));
-
-                    preference.setSetter(getGeneratedMethod("set" + preference.getName(), typeElement));
-
-                    preference.setRemover(getGeneratedMethod("remove" + preference.getName(), typeElement));
-
-                    com.github.preferencer.Preference annotation = executableElement.getAnnotation(com.github.preferencer.Preference.class);
-                    if (annotation != null) {
-                        preference.setDefaultValue(annotation.defaultValue());
-
-                        if (!StringUtils.isEmpty(annotation.name())) {
-                            preference.setKeyName(annotation.name());
-                        }
-                    }
-
-                    preference.setType(executableElement.getReturnType());
-
-                    sharedPreferenceClass.addPreference(preference);
+                TypeElement returnedType;
+                if (executableElement.getReturnType().getKind().isPrimitive()) {
+                    returnedType = typesUtil.boxedClass(
+                            typesUtil.getPrimitiveType(executableElement.getReturnType().getKind()));
+                } else {
+                    returnedType = (TypeElement) typesUtil.asElement(executableElement.getReturnType());
                 }
-            }
-        }
 
-        TypeElement superclass = (TypeElement) typesUtil.asElement(typeElement.getSuperclass());
-        if (superclass != null && superclass.getAnnotation(Superclass.class) != null) {
-            getAllPreferences(superclass, sharedPreferenceClass);
-        }
+                String name = executableElement.getSimpleName().toString();
+                Object defaultValue;
+                Preference preference;
+                switch (returnedType.getQualifiedName().toString()) {
+                    case "java.lang.String":
+                        defaultValue = getDefaultValueAnnotation(executableElement, DefaultString.class)
+                                .map(DefaultString::value).orElse("");
+                        preference = new StringPreference(name, defaultValue, ClassNameUtil.stringPreference);
+                        break;
+                    case "java.lang.Boolean":
+                        defaultValue = getDefaultValueAnnotation(executableElement, DefaultBoolean.class)
+                                .map(DefaultBoolean::value).orElse(false);
+                        preference = new LiteralPreference(name, defaultValue, ClassNameUtil.booleanPreference);
+                        break;
+                    case "java.lang.Integer":
+                        defaultValue = getDefaultValueAnnotation(executableElement, DefaultInt.class)
+                                .map(DefaultInt::value).orElse(0);
+                        preference = new LiteralPreference(name, defaultValue, ClassNameUtil.intPreference);
+                        break;
+                    case "java.lang.Long":
+                        defaultValue = getDefaultValueAnnotation(executableElement, DefaultLong.class)
+                                .map(DefaultLong::value).orElse(0L);
+                        preference = new LongPreference(name, defaultValue, ClassNameUtil.longPreference);
+                        break;
+                    case "java.lang.Float":
+                        defaultValue = getDefaultValueAnnotation(executableElement, DefaultFloat.class)
+                                .map(DefaultFloat::value).orElse(0.0F);
+                        preference = new FloatPreference(name, defaultValue, ClassNameUtil.floatPreference);
+                        break;
+                    case "java.util.Set":
+                        defaultValue = getDefaultValueAnnotation(executableElement, DefaultStringSet.class)
+                                .map(DefaultStringSet::value).orElse(new String[0]);
+                        preference = new StringSetPreference(name, defaultValue, ClassNameUtil.stringSetPreference);
+                        break;
+                    default:
+                        throw new ProcessingException(String.format("Element %s has a invalid type", executableElement), executableElement);
+                }
 
-        for (TypeMirror typeMirror : typeElement.getInterfaces()) {
-            TypeElement interfacee = (TypeElement) typesUtil.asElement(typeMirror);
-            if (interfacee.getAnnotation(Superclass.class) != null) {
-                getAllPreferences(interfacee, sharedPreferenceClass);
+                type.addPreference(preference);
             }
         }
     }
 
-    private GeneratedMethod getGeneratedMethod(String name, TypeElement typeElement) {
-        GeneratedMethod method = new GeneratedMethod();
-        Optional<? extends Element> optional = getOptionalExecutableElement(name, typeElement);
-
-        if (optional.isPresent()) {
-            method.setShouldGenerate(optional.get().getModifiers().contains(Modifier.ABSTRACT));
-            method.setMethodElement((ExecutableElement) optional.get());
-        }
-
-        return method;
+    private <T extends Annotation> Optional<T> getDefaultValueAnnotation(ExecutableElement executableElement, Class<T> clazz) {
+        return Optional.ofNullable(executableElement.getAnnotation(clazz));
     }
 
-    private Optional<? extends Element> getOptionalExecutableElement(String methodName, TypeElement typeElement) {
-        return typeElement.getEnclosedElements().stream()
-                .filter(e -> e.getSimpleName().toString().equals(methodName) && e.getKind() == ElementKind.METHOD)
-                .findFirst();
-    }
-
-    private PostConstructMethod getPostConstruct(TypeElement typeElement) throws ProcessingException {
-        Optional<? extends Element> postConstructMethodOptional =  typeElement.getEnclosedElements().stream()
-                .filter(element -> element.getAnnotation(PostConstruct.class) != null)
-                .findFirst();
-
-        if (postConstructMethodOptional.isPresent()) {
-            ExecutableElement element = (ExecutableElement) postConstructMethodOptional.get();
-            boolean injectContext = false;
-            if (!element.getParameters().isEmpty()) {
-                if (element.getParameters().size() > 1) {
-                    throw new ProcessingException("@PostConstruct method cannot have more than one parameter", element);
-                }
-
-                VariableElement variableElement = element.getParameters().get(0);
-                TypeElement parameterTypeElement = (TypeElement) typesUtil.asElement(variableElement.asType());
-                if (!parameterTypeElement.getQualifiedName().toString().equals("android.content.Context")) {
-                    throw new ProcessingException("Only android.content.Context could be injected in @PostConstruct method", element);
-                }
-                injectContext = true;
-            }
-
-            if (element.getModifiers().contains(Modifier.ABSTRACT)) {
-                throw new ProcessingException("@PostConstruct method shouldn't be abstract", element);
-            }
-
-            if (element.getModifiers().contains(Modifier.PRIVATE)) {
-                throw new ProcessingException("@PostConstruct method shouldn't be private", element);
-            }
-
-            if (element.getReturnType().getKind() != TypeKind.VOID) {
-                warn(element, "PostConstruct doesn't return void, return ignored");
-            }
-
-            return new PostConstructMethod(element.getSimpleName().toString(), injectContext);
+    private boolean isValidClass(TypeElement element) {
+        if (element.getKind() != ElementKind.INTERFACE) {
+            error(element, "Only interfaces allowed to generate SharedPreferences");
+            return false;
         }
-
-        return null;
+        return true;
     }
 
     private void error(Element element, String message, Object... args) {

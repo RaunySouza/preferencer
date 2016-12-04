@@ -7,7 +7,7 @@ dependencies {
     compile 'com.google.auto.service:auto-service:1.0-rc2'
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'com.google.guava:guava:19.0'
-    compile project(':preferencer')
+    compile project(':preferencer-core')
 }
 
 sourceCompatibility = "1.8"

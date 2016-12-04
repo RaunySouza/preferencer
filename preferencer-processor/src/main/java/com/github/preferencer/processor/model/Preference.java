@@ -1,38 +1,21 @@
 package com.github.preferencer.processor.model;
 
 import com.github.preferencer.processor.utils.NamingUtils;
-
-import org.apache.commons.lang3.StringUtils;
-
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.type.TypeMirror;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.MethodSpec;
 
 /**
  * @author raunysouza
  */
-public class Preference {
+public abstract class Preference {
 
-    private ExecutableElement methodElement;
-    private TypeMirror type;
     private String name;
-    private String keyName;
-    private String defaultValue;
-    private GeneratedMethod setter;
-    private GeneratedMethod remover;
+    private Object defaultValue;
+    private ClassName type;
 
-    public ExecutableElement getMethodElement() {
-        return methodElement;
-    }
-
-    public void setMethodElement(ExecutableElement methodElement) {
-        this.methodElement = methodElement;
-    }
-
-    public TypeMirror getType() {
-        return type;
-    }
-
-    public void setType(TypeMirror type) {
+    public Preference(String name, Object defaultValue, ClassName type) {
+        this.name = name;
+        this.defaultValue = defaultValue;
         this.type = type;
     }
 
@@ -44,51 +27,27 @@ public class Preference {
         this.name = name;
     }
 
-    public String getKeyName() {
-        return !StringUtils.isEmpty(keyName) ? keyName : NamingUtils.getKeyName(name);
-    }
-
-    public void setKeyName(String keyName) {
-        this.keyName = keyName;
-    }
-
-    public String getDefaultValue() {
+    public Object getDefaultValue() {
         return defaultValue;
     }
 
-    public void setDefaultValue(String defaultValue) {
+    public void setDefaultValue(Object defaultValue) {
         this.defaultValue = defaultValue;
     }
 
-    public GeneratedMethod getSetter() {
-        return setter;
+    public ClassName getType() {
+        return type;
     }
 
-    public void setSetter(GeneratedMethod setter) {
-        this.setter = setter;
+    public void setType(ClassName type) {
+        this.type = type;
     }
 
-    public GeneratedMethod getRemover() {
-        return remover;
-    }
+    protected abstract String getValueFormat();
 
-    public void setRemover(GeneratedMethod remover) {
-        this.remover = remover;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Preference that = (Preference) o;
-
-        return name != null ? name.equals(that.name) : that.name == null;
-
-    }
-
-    @Override
-    public int hashCode() {
-        return name != null ? name.hashCode() : 0;
+    public void createStatement(MethodSpec.Builder builder) {
+        builder.addStatement(String.format("return create$L($S, %s)", getValueFormat()),
+                NamingUtils.getMethodName(getType().simpleName()),
+                NamingUtils.getKeyName(getName()), getDefaultValue());
     }
 }
