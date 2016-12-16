@@ -9,8 +9,6 @@ import com.github.preferencer.api.preference.LongPreference;
 import com.github.preferencer.api.preference.StringPreference;
 import com.github.preferencer.api.preference.StringSetPreference;
 
-import java.util.Set;
-
 /**
  * @author raunysouza
  */
@@ -42,7 +40,7 @@ public abstract class BaseSharedPreference {
         return new FloatPreference(sharedPreferences, key, defaultValue);
     }
 
-    protected StringSetPreference createStringSetPreference(String key, Set<String> defaultValue) {
+    protected StringSetPreference createStringSetPreference(String key, String... defaultValue) {
         return new StringSetPreference(sharedPreferences, key, defaultValue);
     }
 }

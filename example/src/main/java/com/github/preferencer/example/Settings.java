@@ -1,5 +1,6 @@
 package com.github.preferencer.example;
 
+import com.github.preferencer.annotation.DefaultFloat;
 import com.github.preferencer.annotation.DefaultStringSet;
 import com.github.preferencer.annotation.SharedPreference;
 
@@ -27,6 +28,7 @@ public interface Settings {
 
     float amount();
 
+    @DefaultFloat(1.5F)
     Float amountTwo();
 
     Set<String> people();

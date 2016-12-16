@@ -15,21 +15,16 @@ public class StringSetPreference extends LiteralPreference {
     }
 
     private void convertDefaultValue() {
-        StringBuilder builder = new StringBuilder("new java.util.HashSet<String>(");
         String[] defaultValue = (String[]) getDefaultValue();
         if (defaultValue.length > 0) {
-            builder.append("java.util.Arrays.asList(");
-            StringJoiner joiner = new StringJoiner(",");
+            StringJoiner joiner = new StringJoiner(", ");
             for (String s : defaultValue) {
                 joiner.add("\"" + s + "\"");
             }
-            builder.append(joiner);
-            builder.append(")");
+            setDefaultValue(joiner.toString());
+        } else {
+            setDefaultValue("\"\"");
         }
-
-        builder.append(")");
-
-        setDefaultValue(builder.toString());
     }
 
 }

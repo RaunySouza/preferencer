@@ -2,6 +2,8 @@ package com.github.preferencer.api.preference;
 
 import android.content.SharedPreferences;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -9,8 +11,8 @@ import java.util.Set;
  */
 public class StringSetPreference extends BasePreference<Set<String>> {
 
-    public StringSetPreference(SharedPreferences sharedPreferences, String key, Set<String> defaultValue) {
-        super(sharedPreferences, key, defaultValue);
+    public StringSetPreference(SharedPreferences sharedPreferences, String key, String... defaultValue) {
+        super(sharedPreferences, key, new HashSet<>(Arrays.asList(defaultValue)));
     }
 
     @Override
