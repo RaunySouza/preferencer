@@ -12,12 +12,12 @@ public class BooleanPreference extends BasePreference<Boolean> {
     }
 
     @Override
-    public Boolean get() {
-        return getSharedPreferences().getBoolean(getKey(), getDefaultValue());
+    protected Boolean internalGet(SharedPreferences preferences, String key, Boolean defaultValue) {
+        return preferences.getBoolean(key, defaultValue);
     }
 
     @Override
-    public void put(Boolean value) {
-        getSharedPreferences().edit().putBoolean(getKey(), value).apply();
+    protected void internalPut(SharedPreferences.Editor editor, String key, Boolean value) {
+        editor.putBoolean(key, value);
     }
 }

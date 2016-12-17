@@ -12,12 +12,13 @@ public class IntPreference extends BasePreference<Integer> {
     }
 
     @Override
-    public Integer get() {
-        return getSharedPreferences().getInt(getKey(), getDefaultValue());
+    protected Integer internalGet(SharedPreferences preferences, String key, Integer defaultValue) {
+        return preferences.getInt(key, defaultValue);
     }
 
     @Override
-    public void put(Integer value) {
-        getSharedPreferences().edit().putInt(getKey(), value).apply();
+    protected void internalPut(SharedPreferences.Editor editor, String key, Integer value) {
+        editor.putInt(key, value);
     }
+
 }

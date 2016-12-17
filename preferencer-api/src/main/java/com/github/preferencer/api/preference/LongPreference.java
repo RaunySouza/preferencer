@@ -12,12 +12,13 @@ public class LongPreference extends BasePreference<Long> {
     }
 
     @Override
-    public Long get() {
-        return getSharedPreferences().getLong(getKey(), getDefaultValue());
+    protected Long internalGet(SharedPreferences preferences, String key, Long defaultValue) {
+        return preferences.getLong(key, defaultValue);
     }
 
     @Override
-    public void put(Long value) {
-        getSharedPreferences().edit().putLong(getKey(), value).apply();
+    protected void internalPut(SharedPreferences.Editor editor, String key, Long value) {
+        editor.putLong(key, value);
     }
+
 }

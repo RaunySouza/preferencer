@@ -12,12 +12,13 @@ public class FloatPreference extends BasePreference<Float> {
     }
 
     @Override
-    public Float get() {
-        return getSharedPreferences().getFloat(getKey(), getDefaultValue());
+    protected Float internalGet(SharedPreferences preferences, String key, Float defaultValue) {
+        return preferences.getFloat(key, defaultValue);
     }
 
     @Override
-    public void put(Float value) {
-        getSharedPreferences().edit().putFloat(getKey(), value).apply();
+    protected void internalPut(SharedPreferences.Editor editor, String key, Float value) {
+        editor.putFloat(key, value);
     }
+
 }

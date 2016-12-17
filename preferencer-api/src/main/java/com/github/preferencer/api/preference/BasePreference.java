@@ -21,16 +21,26 @@ abstract class BasePreference<T> {
         this.defaultValue = defaultValue;
     }
 
-    public abstract T get();
+    protected abstract T internalGet(SharedPreferences preferences, String key, T defaultValue);
 
-    public abstract void put(T value);
+    protected abstract void internalPut(SharedPreferences.Editor editor, String key, T value);
+
+    public T get() {
+        return internalGet(sharedPreferences, key, defaultValue);
+    }
+
+    public void put(T value) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        internalPut(editor, key, value);
+        editor.apply();
+    }
 
     public void remove() {
-        sharedPreferences.edit().remove(getKey()).apply();
+        sharedPreferences.edit().remove(key).apply();
     }
 
     public boolean exists() {
-        return false;
+        return sharedPreferences.contains(key);
     }
 
     public T orElseGet(Supplier<T> supplier) {
@@ -55,15 +65,4 @@ abstract class BasePreference<T> {
         }
     }
 
-    protected String getKey() {
-        return key;
-    }
-
-    protected T getDefaultValue() {
-        return defaultValue;
-    }
-
-    protected SharedPreferences getSharedPreferences() {
-        return sharedPreferences;
-    }
 }

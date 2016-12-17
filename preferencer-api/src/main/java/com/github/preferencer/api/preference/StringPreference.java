@@ -12,12 +12,13 @@ public class StringPreference extends BasePreference<String> {
     }
 
     @Override
-    public String get() {
-        return getSharedPreferences().getString(getKey(), getDefaultValue());
+    protected String internalGet(SharedPreferences preferences, String key, String defaultValue) {
+        return preferences.getString(key, defaultValue);
     }
 
     @Override
-    public void put(String value) {
-        getSharedPreferences().edit().putString(getKey(), value).apply();
+    protected void internalPut(SharedPreferences.Editor editor, String key, String value) {
+        editor.putString(key, value);
     }
+
 }

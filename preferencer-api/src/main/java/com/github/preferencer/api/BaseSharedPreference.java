@@ -43,4 +43,8 @@ public abstract class BaseSharedPreference {
     protected StringSetPreference createStringSetPreference(String key, String... defaultValue) {
         return new StringSetPreference(sharedPreferences, key, defaultValue);
     }
+
+    protected SharedPreferences getSharedPreferences() {
+        return sharedPreferences;
+    }
 }

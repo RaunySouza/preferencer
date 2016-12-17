@@ -23,7 +23,7 @@ public class StringSetPreference extends LiteralPreference {
             }
             setDefaultValue(joiner.toString());
         } else {
-            setDefaultValue("\"\"");
+            setDefaultValue("new String[0]");
         }
     }
 

@@ -16,12 +16,13 @@ public class StringSetPreference extends BasePreference<Set<String>> {
     }
 
     @Override
-    public Set<String> get() {
-        return getSharedPreferences().getStringSet(getKey(), getDefaultValue());
+    protected Set<String> internalGet(SharedPreferences preferences, String key, Set<String> defaultValue) {
+        return preferences.getStringSet(key, defaultValue);
     }
 
     @Override
-    public void put(Set<String> value) {
-        getSharedPreferences().edit().putStringSet(getKey(), value).apply();
+    protected void internalPut(SharedPreferences.Editor editor, String key, Set<String> value) {
+        editor.putStringSet(key, value);
     }
+
 }
