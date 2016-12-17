@@ -20,9 +20,12 @@ import com.github.preferencer.processor.utils.ClassNameUtil;
 import com.google.auto.service.AutoService;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
@@ -78,7 +81,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
 
                 SharedPreference sharedPreferenceAnnotation = typeElement.getAnnotation(SharedPreference.class);
                 SharedPreferenceType type = new SharedPreferenceType(typeElement, sharedPreferenceAnnotation.useDefault());
-                getPreferences(type);
+                type.setPreferences(getPreferences(type.getSourceElement()));
 
                 if (type.getPreferences().isEmpty()) {
                     warn(element, "Class %s is annotated with @SharedPreference but has no field", typeElement.getSimpleName());
@@ -96,8 +99,9 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
         return true;
     }
 
-    private void getPreferences(SharedPreferenceType type) throws ProcessingException {
-        for (Element element : type.getSourceElement().getEnclosedElements()) {
+    private List<Preference> getPreferences(TypeElement type) throws ProcessingException {
+        List<Preference> preferences = new ArrayList<>();
+        for (Element element : type.getEnclosedElements()) {
             if (element.getKind() == ElementKind.METHOD) {
                 ExecutableElement executableElement = (ExecutableElement) element;
                 TypeElement returnedType;
@@ -146,9 +150,28 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
                         throw new ProcessingException(String.format("Element %s has a invalid type", executableElement), executableElement);
                 }
 
-                type.addPreference(preference);
+                preferences.add(preference);
             }
         }
+
+        List<TypeElement> interfaces = type.getInterfaces().stream()
+                .reduce(new ArrayList<TypeElement>(), (list, typeMirror) -> {
+                    list.add((TypeElement) typesUtil.asElement(typeMirror));
+                    return list;
+                }, (t1, t2) -> t1)
+                .stream()
+                .filter(typeElement -> {
+                    String qualifiedName = typeElement.getQualifiedName().toString();
+                    return !qualifiedName.startsWith("java") &&
+                            !qualifiedName.startsWith("android");
+                })
+                .collect(Collectors.toList());
+
+        for (TypeElement anInterface : interfaces) {
+            preferences.addAll(getPreferences(anInterface));
+        }
+
+        return preferences;
     }
 
     private <T extends Annotation> Optional<T> getDefaultValueAnnotation(ExecutableElement executableElement, Class<T> clazz) {

@@ -10,7 +10,7 @@ import java.util.Set;
  * @author raunysouza
  */
 @SharedPreference
-public interface Settings {
+public interface Settings extends SettingsTwo {
 
     String name();
 
