@@ -180,7 +180,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
 
     private boolean isValidClass(TypeElement element) {
         if (element.getKind() != ElementKind.INTERFACE) {
-            error(element, "Only interfaces allowed to generate SharedPreferences");
+            error(element, "Only interfaces are allowed to generate SharedPreferences");
             return false;
         }
         return true;

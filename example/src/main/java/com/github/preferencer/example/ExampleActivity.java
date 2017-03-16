@@ -34,5 +34,15 @@ public class ExampleActivity extends AppCompatActivity {
                 .count().put(1)
                 .timeTwo().remove()
                 .apply();
+
+        try (SettingsPreference.SettingsPreferenceEditor edit = mSettingsPreference.edit()) {
+            edit.beginTransaction();
+
+            edit
+                .loaded().put(false)
+                .nickname().put("Doe");
+
+            edit.setSuccessfully();
+        }
     }
 }

@@ -26,7 +26,6 @@ import javax.lang.model.element.Modifier;
  */
 public class SharedPreferenceGenerator {
 
-    private static final String FIELD_CURRENT_TRANSACTION = "currentTransaction";
     private static final String VAR_CONTEXT = "context";
 
     public void generate(SharedPreferenceType type, ProcessingEnvironment env) throws ProcessingException {

@@ -10,7 +10,7 @@ import java8.util.function.Supplier;
 /**
  * @author raunysouza
  */
-abstract class BasePreference<T> {
+public abstract class BasePreference<T> {
 
     private SharedPreferences sharedPreferences;
     private String key;
@@ -41,6 +41,7 @@ abstract class BasePreference<T> {
     }
 
     public void removeIf(Predicate<T> predicate) {
+        Objects.requireNonNull(predicate);
         if (predicate.test(get())) {
             remove();
         }
@@ -51,6 +52,7 @@ abstract class BasePreference<T> {
     }
 
     public <X extends Throwable> T orElseThrow(Supplier<X> supplier) throws X {
+        Objects.requireNonNull(supplier);
         if (exists()) {
             return get();
         } else {
