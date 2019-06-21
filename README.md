@@ -30,7 +30,7 @@ Add the library to the project-level build.gradle, using the apt plugin to enabl
 ```groovy
 apply plugin: 'com.neenbedankt.android-apt'
 
-def preferencer_version = "0.0.1-alpha2"
+def preferencer_version = "0.0.1-alpha3"
 
 dependencies {
   apt "com.github.RaunySouza.preferencer:preferencer-processor:${preferencer_version}"
